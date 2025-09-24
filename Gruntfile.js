@@ -7,20 +7,28 @@ module.exports = function (grunt) {
 		'languages/**',
 		'uninstall.php',
 		'wpmudev-plugin-test.php',
-		'!vendor/**',
+		'vendor/**',
 		'!**/*.map',
-		'QUESTIONS.md',
-		'README.md',
-		'composer.json',
-		'package.json',
-		'Gruntfile.js',
-		'gulpfile.js',
-		'webpack.config.js',
-		'phpcs.ruleset.xml',
-		'phpunit.xml.dist',
-		'src/**',
-		'tests/**',
-	]
+		'!QUESTIONS.md',
+		'!README.md',
+		'!composer.json',
+		'!package.json',
+		'!Gruntfile.js',
+		'!gulpfile.js',
+		'!webpack.config.js',
+		'!phpcs.ruleset.xml',
+		'!phpunit.xml.dist',
+		'!src/**',
+		'!tests/**',
+	];
+
+	const productionFiles = [
+		'app/**',
+		'core/**',
+		'languages/**',
+		'uninstall.php',
+		'wpmudev-plugin-test.php',
+	];
 
     const excludeCopyFilesPro = copyFiles
 		.slice(0)
@@ -77,7 +85,7 @@ module.exports = function (grunt) {
 
 		copy: {
 			pro: {
-				src: excludeCopyFilesPro,
+				src: productionFiles,
 				dest: 'build/<%= pkg.name %>/',
 			},
 		},
