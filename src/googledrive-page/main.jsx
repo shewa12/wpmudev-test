@@ -1,7 +1,7 @@
 import { createRoot, render, StrictMode, useState, useEffect, createInterpolateElement } from '@wordpress/element';
 import { Button, TextControl, Spinner, Notice } from '@wordpress/components';
 
-import "./scss/style.scss"
+import "./scss/style.scss";
 
 const domElement = document.getElementById( window.wpmudevDriveTest.dom_element_id );
 
