@@ -23,8 +23,11 @@ use WP_Error;
 use Google_Client;
 use Google_Service_Drive;
 use Google_Service_Drive_DriveFile;
+use WPMUDEV\PluginTestApp\Traits\RestResponse;
 
 class Drive_API extends Base {
+
+	use RestResponse;
 
 	/**
 	 * Google Client instance.
@@ -72,7 +75,7 @@ class Drive_API extends Base {
 	 */
 	private function setup_google_client() {
 		$auth_creds = get_option( 'wpmudev_plugin_tests_auth', array() );
-		
+
 		if ( empty( $auth_creds['client_id'] ) || empty( $auth_creds['client_secret'] ) ) {
 			return;
 		}
@@ -99,108 +102,164 @@ class Drive_API extends Base {
 	 */
 	public function register_routes() {
 		// Save credentials endpoint
-		register_rest_route( 'wpmudev/v1/drive', '/save-credentials', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'save_credentials' ),
-		) );
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/save-credentials',
+			array(
+				'methods'  => 'POST',
+				'callback' => array( $this, 'save_credentials' ),
+			)
+		);
 
 		// Authentication endpoint
-		register_rest_route( 'wpmudev/v1/drive', '/auth', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'start_auth' ),
-		) );
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/auth',
+			array(
+				'methods'  => 'POST',
+				'callback' => array( $this, 'start_auth' ),
+			)
+		);
 
 		// OAuth callback
-		register_rest_route( 'wpmudev/v1/drive', '/callback', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'handle_callback' ),
-		) );
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/callback',
+			array(
+				'methods'  => 'GET',
+				'callback' => array( $this, 'handle_callback' ),
+			)
+		);
 
 		// List files
-		register_rest_route( 'wpmudev/v1/drive', '/files', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'list_files' ),
-		) );
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/files',
+			array(
+				'methods'  => 'GET',
+				'callback' => array( $this, 'list_files' ),
+			)
+		);
 
 		// Upload file
-		register_rest_route( 'wpmudev/v1/drive', '/upload', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'upload_file' ),
-		) );
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/upload',
+			array(
+				'methods'  => 'POST',
+				'callback' => array( $this, 'upload_file' ),
+			)
+		);
 
 		// Download file
-		register_rest_route( 'wpmudev/v1/drive', '/download', array(
-			'methods'             => 'GET',
-			'callback'            => array( $this, 'download_file' ),
-		) );
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/download',
+			array(
+				'methods'  => 'GET',
+				'callback' => array( $this, 'download_file' ),
+			)
+		);
 
 		// Create folder
-		register_rest_route( 'wpmudev/v1/drive', '/create-folder', array(
-			'methods'             => 'POST',
-			'callback'            => array( $this, 'create_folder' ),
-		) );
+		register_rest_route(
+			'wpmudev/v1/drive',
+			'/create-folder',
+			array(
+				'methods'  => 'POST',
+				'callback' => array( $this, 'create_folder' ),
+			)
+		);
 	}
 
 	/**
 	 * Save Google OAuth credentials.
 	 */
-	public function save_credentials() {
-		$client_id     = '';
-		$client_secret = '';
+	public function save_credentials( WP_REST_Request $request ) {
+		$client_id     = sanitize_text_field( $request->get_param( 'client_id' ) );
+		$client_secret = sanitize_text_field( $request->get_param( 'client_secret' ) );
 
+		if ( empty( $client_id ) || empty( $client_secret ) ) {
+			return $this->send_response(
+				array(
+					'success' => false,
+					'message' => 'Client ID and Client Secret are required',
+				)
+			);
+		}
 
-		// Save credentials
 		$credentials = array(
 			'client_id'     => $client_id,
 			'client_secret' => $client_secret,
 		);
 
 		update_option( 'wpmudev_plugin_tests_auth', $credentials );
-		
-		// Reinitialize Google Client with new credentials
+
+		// Reinitialize client.
 		$this->setup_google_client();
 
-		return true;
+		return $this->send_response(
+			array(
+				'success' => true,
+				'message' => 'Credentials saved successfully.',
+			)
+		);
 	}
+
 
 	/**
 	 * Start Google OAuth flow.
 	 */
 	public function start_auth() {
+		$this->setup_google_client();
+
 		if ( ! $this->client ) {
-			return new WP_Error( 'missing_credentials', 'Google OAuth credentials not configured', array( 'status' => 400 ) );
+			return $this->send_response(
+				array(
+					'success' => false,
+					'message' => 'Google OAuth credentials not configured',
+				)
+			);
 		}
 
-		return true;
+		$auth_url = $this->client->createAuthUrl();
+
+		return $this->send_response(
+			array(
+				'success'  => true,
+				'auth_url' => $auth_url,
+			),
+		);
 	}
 
 	/**
 	 * Handle OAuth callback.
 	 */
-	public function handle_callback() {
-		$code  = '';
-		$state = '';
+	public function handle_callback( WP_REST_Request $request ) {
+		$code = $request->get_param( 'code' );
 
 		if ( empty( $code ) ) {
 			wp_die( 'Authorization code not received' );
 		}
 
 		try {
-			// Exchange code for access token
-			$access_token = array();
+			$access_token = $this->client->fetchAccessTokenWithAuthCode( $code );
 
-			// Store tokens
+			if ( isset( $access_token['error'] ) ) {
+				wp_die( 'Failed to get access token: ' . esc_html( $access_token['error'] ) );
+			}
+
+			// Store access & refresh tokens
 			update_option( 'wpmudev_drive_access_token', $access_token );
 			if ( isset( $access_token['refresh_token'] ) ) {
-				update_option( 'wpmudev_drive_refresh_token', $access_token );
+				update_option( 'wpmudev_drive_refresh_token', $access_token['refresh_token'] );
 			}
-			update_option( 'wpmudev_drive_token_expires', '???' );
 
-			// Redirect back to admin page
-			wp_redirect( admin_url( 'admin.php?page=wpmudev_plugintest_drive&auth=success' ) );
+			// Redirect to admin page
+			wp_safe_redirect( admin_url( 'admin.php?page=wpmudev_plugintest_drive&auth=success' ) );
 			exit;
 
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			wp_die( 'Failed to get access token: ' . esc_html( $e->getMessage() ) );
 		}
 	}
@@ -216,21 +275,21 @@ class Drive_API extends Base {
 		// Check if token is expired and refresh if needed
 		if ( $this->client->isAccessTokenExpired() ) {
 			$refresh_token = get_option( 'wpmudev_drive_refresh_token' );
-			
+
 			if ( empty( $refresh_token ) ) {
 				return false;
 			}
 
 			try {
 				$new_token = $this->client->fetchAccessTokenWithRefreshToken( $refresh_token );
-				
+
 				if ( array_key_exists( 'error', $new_token ) ) {
 					return false;
 				}
 
 				update_option( 'wpmudev_drive_access_token', 'NEW TOKEN' );
 				update_option( 'wpmudev_drive_token_expires', 'NEW EXPIRATION TIME' );
-				
+
 				return true;
 			} catch ( Exception $e ) {
 				return false;
@@ -289,13 +348,13 @@ class Drive_API extends Base {
 		}
 
 		$files = $request->get_file_params();
-		
+
 		if ( empty( $files['file'] ) ) {
 			return new WP_Error( 'no_file', 'No file provided', array( 'status' => 400 ) );
 		}
 
 		$file = $files['file'];
-		
+
 		if ( $file['error'] !== UPLOAD_ERR_OK ) {
 			return new WP_Error( 'upload_error', 'File upload error', array( 'status' => 400 ) );
 		}
@@ -316,16 +375,18 @@ class Drive_API extends Base {
 				)
 			);
 
-			return new WP_REST_Response( array(
-				'success' => true,
-				'file'    => array(
-					'id'          => $result->getId(),
-					'name'        => $result->getName(),
-					'mimeType'    => $result->getMimeType(),
-					'size'        => $result->getSize(),
-					'webViewLink' => $result->getWebViewLink(),
-				),
-			) );
+			return new WP_REST_Response(
+				array(
+					'success' => true,
+					'file'    => array(
+						'id'          => $result->getId(),
+						'name'        => $result->getName(),
+						'mimeType'    => $result->getMimeType(),
+						'size'        => $result->getSize(),
+						'webViewLink' => $result->getWebViewLink(),
+					),
+				)
+			);
 
 		} catch ( Exception $e ) {
 			return new WP_Error( 'upload_failed', $e->getMessage(), array( 'status' => 500 ) );
@@ -341,31 +402,39 @@ class Drive_API extends Base {
 		}
 
 		$file_id = $request->get_param( 'file_id' );
-		
+
 		if ( empty( $file_id ) ) {
 			return new WP_Error( 'missing_file_id', 'File ID is required', array( 'status' => 400 ) );
 		}
 
 		try {
 			// Get file metadata
-			$file = $this->drive_service->files->get( $file_id, array(
-				'fields' => 'id,name,mimeType,size',
-			) );
+			$file = $this->drive_service->files->get(
+				$file_id,
+				array(
+					'fields' => 'id,name,mimeType,size',
+				)
+			);
 
 			// Download file content
-			$response = $this->drive_service->files->get( $file_id, array(
-				'alt' => 'media',
-			) );
+			$response = $this->drive_service->files->get(
+				$file_id,
+				array(
+					'alt' => 'media',
+				)
+			);
 
 			$content = $response->getBody()->getContents();
 
 			// Return file content as base64 for JSON response
-			return new WP_REST_Response( array(
-				'success'  => true,
-				'content'  => base64_encode( $content ),
-				'filename' => $file->getName(),
-				'mimeType' => $file->getMimeType(),
-			) );
+			return new WP_REST_Response(
+				array(
+					'success'  => true,
+					'content'  => base64_encode( $content ),
+					'filename' => $file->getName(),
+					'mimeType' => $file->getMimeType(),
+				)
+			);
 
 		} catch ( Exception $e ) {
 			return new WP_Error( 'download_failed', $e->getMessage(), array( 'status' => 500 ) );
@@ -381,7 +450,7 @@ class Drive_API extends Base {
 		}
 
 		$name = $request->get_param( 'name' );
-		
+
 		if ( empty( $name ) ) {
 			return new WP_Error( 'missing_name', 'Folder name is required', array( 'status' => 400 ) );
 		}
@@ -391,19 +460,24 @@ class Drive_API extends Base {
 			$folder->setName( sanitize_text_field( $name ) );
 			$folder->setMimeType( 'application/vnd.google-apps.folder' );
 
-			$result = $this->drive_service->files->create( $folder, array(
-				'fields' => 'id,name,mimeType,webViewLink',
-			) );
+			$result = $this->drive_service->files->create(
+				$folder,
+				array(
+					'fields' => 'id,name,mimeType,webViewLink',
+				)
+			);
 
-			return new WP_REST_Response( array(
-				'success' => true,
-				'folder'  => array(
-					'id'          => $result->getId(),
-					'name'        => $result->getName(),
-					'mimeType'    => $result->getMimeType(),
-					'webViewLink' => $result->getWebViewLink(),
-				),
-			) );
+			return new WP_REST_Response(
+				array(
+					'success' => true,
+					'folder'  => array(
+						'id'          => $result->getId(),
+						'name'        => $result->getName(),
+						'mimeType'    => $result->getMimeType(),
+						'webViewLink' => $result->getWebViewLink(),
+					),
+				)
+			);
 
 		} catch ( Exception $e ) {
 			return new WP_Error( 'create_failed', $e->getMessage(), array( 'status' => 500 ) );
