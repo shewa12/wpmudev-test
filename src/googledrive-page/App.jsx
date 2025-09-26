@@ -1,86 +1,104 @@
-import { useState, useEffect, createInterpolateElement } from '@wordpress/element';
-import { Button, TextControl, Spinner, Notice } from '@wordpress/components';
+import {
+  useState,
+  useEffect,
+} from "@wordpress/element";
+import { Button, TextControl, Spinner, Notice } from "@wordpress/components";
 
 import "./scss/style.scss";
-import CredentialsForm from './components/CredentialsForm';
-import AuthForm from './components/AuthForm';
-import FileUpload from './components/FileUpload';
-import CreateFolder from './components/CreateFolder';
+import CredentialsForm from "./components/CredentialsForm";
+import AuthForm from "./components/AuthForm";
+import FileUpload from "./components/FileUpload";
+import CreateFolder from "./components/CreateFolder";
+import useDriveService from "./hooks/useDriveService";
+import NoticeMessage from "./components/NoticeMessage";
+import FilesList from "./components/FilesList";
 
 const WPMUDEV_DriveTest = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(window.wpmudevDriveTest.authStatus || false);
-    const [hasCredentials, setHasCredentials] = useState(window.wpmudevDriveTest.hasCredentials || false);
+  const {
+    saveCredentials,
+    authenticate,
+    getFiles,
+    uploadFile,
+    downloadFile,
+    createFolder,
+  } = useDriveService();
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    window.wpmudevDriveTest.authStatus || false
+  );
+  const [hasCredentials, setHasCredentials] = useState(
+    window.wpmudevDriveTest.hasCredentials || false
+  );
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [files, setFiles] = useState([]);
-    const [uploadFile, setUploadFile] = useState(null);
-    const [folderName, setFolderName] = useState('');
-    const [notice, setNotice] = useState({ message: '', type: '' });
-    const [credentials, setCredentials] = useState({
-        clientId: '',
-        clientSecret: ''
-    });
+  const [isLoading, setIsLoading] = useState(false);
+  const [files, setFiles] = useState([]);
 
-    useEffect(() => {
-    }, [isAuthenticated]);
+  const [folderName, setFolderName] = useState("");
+  const [notice, setNotice] = useState({ message: "", type: "" });
+  const [credentials, setCredentials] = useState({
+    clientId: "",
+    clientSecret: "",
+  });
 
-    const showNotice = (message, type = 'success') => {
-        setNotice({ message, type });
-        setTimeout(() => setNotice({ message: '', type: '' }), 5000);
-    };
+  useEffect(() => {}, [isAuthenticated]);
 
-    const handleSaveCredentials = async () => {
-    };
+  const showNotice = (message, type = "success") => {
+    setNotice({ message, type });
+    setTimeout(() => setNotice({ message: "", type: "" }), 5000);
+  };
 
-    const handleAuth = async () => {
-    };
+  const handleSaveCredentials = async () => {};
 
-    const loadFiles = async () => {
+  const handleAuth = async () => {
+    try {
+        const res = await authenticate();
+        const {success, auth_url} = res;
+        if (success) {
+            window.location.href = auth_url;
+        }
+    } catch (error) {
+        alert(error.message)
+    }
+  };
 
-    };
+  const loadFiles = async () => {};
 
-    const handleUpload = async () => {
-    };
+  const handleUpload = async () => {
+    
+  };
 
-    const handleDownload = async (fileId, fileName) => {
-    };
+  const handleDownload = async (fileId, fileName) => {};
 
-    const handleCreateFolder = async () => {
-    };
+  const handleCreateFolder = async () => {};
 
-    return (
+  return (
+    <>
+      <div className="sui-header">
+        <h1 className="sui-header-title">Google Drive Test</h1>
+        <p className="sui-description">
+          Test Google Drive API integration for applicant assessment
+        </p>
+      </div>
+
+      <NoticeMessage />
+
+      {!hasCredentials ? (
+        <CredentialsForm />
+      ) : !isAuthenticated ? (
+        <AuthForm handleAuth={handleAuth} isLoading={isLoading} />
+      ) : (
         <>
-            <div className="sui-header">
-                <h1 className="sui-header-title">
-                    Google Drive Test
-                </h1>
-                <p className="sui-description">Test Google Drive API integration for applicant assessment</p>
-            </div>
+          {/* File Upload Section */}
+          <FileUpload handleUpload={handleUpload} isLoading={isLoading}/>
 
-            {notice.message && (
-                <Notice status={notice.type} isDismissible onRemove=''>
-                    {notice.message}
-                </Notice>
-            )}
+          {/* Create Folder Section */}
+          <CreateFolder handleCreateFolder={handleCreateFolder} isLoading={isLoading}/>
 
-            {!hasCredentials ? (
-                <CredentialsForm />
-            ) : !isAuthenticated ? (
-                <AuthForm />
-            ) : (
-                <>
-                    {/* File Upload Section */}
-                    <FileUpload />
-
-                    {/* Create Folder Section */}
-                    <CreateFolder />
-
-                    {/* Files List Section */}
-                    <FileList />
-                </>
-            )}
+          {/* Files List Section */}
+          <FilesList files={files} loadFiles={loadFiles} isLoading={isLoading}/>
         </>
-    );
-}
+      )}
+    </>
+  );
+};
 
 export default WPMUDEV_DriveTest;

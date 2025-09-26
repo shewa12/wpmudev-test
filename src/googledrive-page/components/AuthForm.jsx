@@ -1,4 +1,8 @@
-const AuthForm = () => {
+import { Button, Spinner } from '@wordpress/components';
+const AuthForm = ({ handleAuth, isLoading }) => {
+  const handleClick = () => {
+    handleAuth();
+  };
   return (
     <>
       <div className="sui-box">
@@ -30,7 +34,7 @@ const AuthForm = () => {
             </Button>
           </div>
           <div className="sui-actions-right">
-            <Button variant="primary" onClick={handleAuth} disabled={isLoading}>
+            <Button variant="primary" onClick={handleClick} disabled={false}>
               {isLoading ? <Spinner /> : "Authenticate with Google Drive"}
             </Button>
           </div>

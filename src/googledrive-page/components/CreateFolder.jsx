@@ -1,4 +1,8 @@
-const CreateFolder = () => {
+import { useState } from 'react';
+import { Button, Spinner , TextControl} from "@wordpress/components";
+
+const CreateFolder = ({handleCreateFolder, isLoading}) => {
+    const [folderName, setFolderName] = useState("");
   return (
     <>
       <div className="sui-box">

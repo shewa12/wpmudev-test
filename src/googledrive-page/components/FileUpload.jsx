@@ -1,4 +1,7 @@
-const FileUpload = () => {
+import { useState } from 'react';
+import { Button, Spinner } from "@wordpress/components";
+const FileUpload = ({handleUpload, isLoading}) => {
+const [uploadFile, setUploadFile] = useState(null);
   return (
     <>
       <div className="sui-box">
