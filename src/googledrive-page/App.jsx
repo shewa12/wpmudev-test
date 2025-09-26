@@ -62,8 +62,28 @@ const WPMUDEV_DriveTest = () => {
 
   const loadFiles = async () => {};
 
-  const handleUpload = async () => {
-    
+  const handleUpload = async (file) => {
+    setIsLoading(true);
+    if (!file) {
+      showNotice()
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // call uploadFile (this uses your backend route: restEndpointUpload)
+      const response = await uploadFile(formData);
+
+      console.log("Upload success:", response);
+      alert("File uploaded successfully!");
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDownload = async (fileId, fileName) => {};
@@ -79,7 +99,9 @@ const WPMUDEV_DriveTest = () => {
         </p>
       </div>
 
-      <NoticeMessage />
+      <NoticeMessage message={notice.message} type={notice.type} onRemove={() => {
+        showNotice("", "success")
+      }}/>
 
       {!hasCredentials ? (
         <CredentialsForm />

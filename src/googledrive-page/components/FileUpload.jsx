@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Spinner } from "@wordpress/components";
 const FileUpload = ({handleUpload, isLoading}) => {
 const [uploadFile, setUploadFile] = useState(null);
+
   return (
     <>
       <div className="sui-box">
@@ -27,7 +28,7 @@ const [uploadFile, setUploadFile] = useState(null);
           <div className="sui-actions-right">
             <Button
               variant="primary"
-              onClick={handleUpload}
+              onClick={ () => { handleUpload(uploadFile) }}
               disabled={isLoading || !uploadFile}
             >
               {isLoading ? <Spinner /> : "Upload to Drive"}
