@@ -12,6 +12,7 @@ import CreateFolder from "./components/CreateFolder";
 import useDriveService from "./hooks/useDriveService";
 import NoticeMessage from "./components/NoticeMessage";
 import FilesList from "./components/FilesList";
+import { __ } from "@wordpress/i18n";
 
 const WPMUDEV_DriveTest = () => {
   const {
@@ -75,12 +76,15 @@ const WPMUDEV_DriveTest = () => {
 
       // call uploadFile (this uses your backend route: restEndpointUpload)
       const response = await uploadFile(formData);
-
-      console.log("Upload success:", response);
-      alert("File uploaded successfully!");
+        const {success, file} = response
+      if (success) {
+        showNotice(__('File uploaded successfully', 'wpmudev-plugin-test'));
+      } else {
+        showNotice(__('File upload failed'), "error");
+      }
     } catch (error) {
-      console.error("Upload failed:", error);
-      alert(error.message);
+      showNotice(__('File upload failed', 'wpmudev-plugin-test'), "error");
+      console.error("Error uploading file:", error);
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +99,7 @@ const WPMUDEV_DriveTest = () => {
       <div className="sui-header">
         <h1 className="sui-header-title">Google Drive Test</h1>
         <p className="sui-description">
-          Test Google Drive API integration for applicant assessment
+          {__('Test Google Drive API integration for applicant assessment', 'wpmudev-plugin-test')}
         </p>
       </div>
 
