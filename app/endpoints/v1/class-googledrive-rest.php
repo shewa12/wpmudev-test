@@ -27,6 +27,20 @@ use WPMUDEV\PluginTestApp\Traits\RestResponse;
 
 class Drive_API extends Base {
 
+	/**
+	 * Option names to tokens
+	 *
+	 * @since 1.0.0
+	 */
+	const ACCESS_TOKEN     = 'wpmudev_drive_access_token';
+	const REFRESH_TOKEN    = 'wpmudev_drive_refresh_token';
+	const TOKEN_EXPIRES_IN = 'wpmudev_drive_token_expires';
+
+	/**
+	 * Auth credentials option name
+	 */
+	const AUTH_CRED = 'wpmudev_plugin_tests_auth';
+
 	use RestResponse;
 
 	/**
@@ -74,7 +88,7 @@ class Drive_API extends Base {
 	 * Setup Google Client.
 	 */
 	private function setup_google_client() {
-		$auth_creds = get_option( 'wpmudev_plugin_tests_auth', array() );
+		$auth_creds = get_option( self::AUTH_CRED, array() );
 
 		if ( empty( $auth_creds['client_id'] ) || empty( $auth_creds['client_secret'] ) ) {
 			return;
@@ -89,7 +103,7 @@ class Drive_API extends Base {
 		$this->client->setPrompt( 'consent' );
 
 		// Set access token if available
-		$access_token = get_option( 'wpmudev_drive_access_token', '' );
+		$access_token = get_option( self::ACCESS_TOKEN, '' );
 		if ( ! empty( $access_token ) ) {
 			$this->client->setAccessToken( $access_token );
 		}
@@ -193,7 +207,7 @@ class Drive_API extends Base {
 			'client_secret' => $client_secret,
 		);
 
-		update_option( 'wpmudev_plugin_tests_auth', $credentials );
+		update_option( self::AUTH_CRED, $credentials );
 
 		// Reinitialize client.
 		$this->setup_google_client();
@@ -243,19 +257,22 @@ class Drive_API extends Base {
 		}
 
 		try {
-			$access_token = $this->client->fetchAccessTokenWithAuthCode( $code );
+			$access_token  = $this->client->fetchAccessTokenWithAuthCode( $code );
+			$expires_in    = $access_token['expires_in'] ?? 0;
+			$refresh_token = $access_token['refresh_token'] ?? '';
 
 			if ( isset( $access_token['error'] ) ) {
 				wp_die( 'Failed to get access token: ' . esc_html( $access_token['error'] ) );
 			}
 
-			// Store access & refresh tokens
-			update_option( 'wpmudev_drive_access_token', $access_token );
-			if ( isset( $access_token['refresh_token'] ) ) {
-				update_option( 'wpmudev_drive_refresh_token', $access_token['refresh_token'] );
+			// Store access & refresh tokens.
+			update_option( self::ACCESS_TOKEN, $access_token );
+			update_option( self::TOKEN_EXPIRES_IN, time() + $expires_in );
+			if ( $refresh_token ) {
+				update_option( self::REFRESH_TOKEN, $refresh_token );
 			}
 
-			// Redirect to admin page
+			// Redirect to admin page.
 			wp_safe_redirect( admin_url( 'admin.php?page=wpmudev_plugintest_drive&auth=success' ) );
 			exit;
 
@@ -268,13 +285,15 @@ class Drive_API extends Base {
 	 * Ensure we have a valid access token.
 	 */
 	private function ensure_valid_token() {
+		$this->setup_google_client();
+
 		if ( ! $this->client ) {
 			return false;
 		}
 
 		// Check if token is expired and refresh if needed
 		if ( $this->client->isAccessTokenExpired() ) {
-			$refresh_token = get_option( 'wpmudev_drive_refresh_token' );
+			$refresh_token = get_option( self::REFRESH_TOKEN );
 
 			if ( empty( $refresh_token ) ) {
 				return false;
@@ -287,8 +306,8 @@ class Drive_API extends Base {
 					return false;
 				}
 
-				update_option( 'wpmudev_drive_access_token', 'NEW TOKEN' );
-				update_option( 'wpmudev_drive_token_expires', 'NEW EXPIRATION TIME' );
+				update_option( self::ACCESS_TOKEN, 'NEW TOKEN' );
+				update_option( self::TOKEN_EXPIRES_IN, 'NEW EXPIRATION TIME' );
 
 				return true;
 			} catch ( Exception $e ) {

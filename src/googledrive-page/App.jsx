@@ -1,69 +1,86 @@
+import { useState, useEffect, createInterpolateElement } from '@wordpress/element';
+import { Button, TextControl, Spinner, Notice } from '@wordpress/components';
 
-import { StrictMode, useState } from '@wordpress/element';
+import "./scss/style.scss";
 import CredentialsForm from './components/CredentialsForm';
-import NoticeMessage from './components/NoticeMessage';
+import AuthForm from './components/AuthForm';
+import FileUpload from './components/FileUpload';
+import CreateFolder from './components/CreateFolder';
 
-const App = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [notice, setNotice] = useState({ message: '', type: '' });
+const WPMUDEV_DriveTest = () => {
+    const [isAuthenticated, setIsAuthenticated] = useState(window.wpmudevDriveTest.authStatus || false);
     const [hasCredentials, setHasCredentials] = useState(window.wpmudevDriveTest.hasCredentials || false);
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [files, setFiles] = useState([]);
+    const [uploadFile, setUploadFile] = useState(null);
+    const [folderName, setFolderName] = useState('');
+    const [notice, setNotice] = useState({ message: '', type: '' });
+    const [credentials, setCredentials] = useState({
+        clientId: '',
+        clientSecret: ''
+    });
+
+    useEffect(() => {
+    }, [isAuthenticated]);
 
     const showNotice = (message, type = 'success') => {
         setNotice({ message, type });
         setTimeout(() => setNotice({ message: '', type: '' }), 5000);
     };
 
-    const handleSaveCredentials = async (data) => {
-        try {
-            setIsLoading(true);
+    const handleSaveCredentials = async () => {
+    };
 
-            const response = await fetch(window.wpmudevDriveTest.restUrl + 'save-credentials', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': window.wpmudevDriveTest.nonce,
-                },
-                body: JSON.stringify(data),
-            });
+    const handleAuth = async () => {
+    };
 
-            const result = await response.json();
+    const loadFiles = async () => {
 
-            if (!response.ok) {
-                throw new Error(result.message || 'Failed to save credentials');
-            }
+    };
 
-            showNotice('Credentials saved successfully');
-            setHasCredentials(true);
-        } catch (err) {
-            showNotice(err.message, 'error');
-        } finally {
-            setIsLoading(false);
-        }
+    const handleUpload = async () => {
+    };
+
+    const handleDownload = async (fileId, fileName) => {
+    };
+
+    const handleCreateFolder = async () => {
     };
 
     return (
         <>
             <div className="sui-header">
-                <h1 className="sui-header-title">Google Drive Test</h1>
+                <h1 className="sui-header-title">
+                    Google Drive Test
+                </h1>
                 <p className="sui-description">Test Google Drive API integration for applicant assessment</p>
             </div>
 
-            <NoticeMessage
-                message={notice.message}
-                type={notice.type}
-                onRemove={() => setNotice({ message: '', type: '' })}
-            />
+            {notice.message && (
+                <Notice status={notice.type} isDismissible onRemove=''>
+                    {notice.message}
+                </Notice>
+            )}
 
             {!hasCredentials ? (
-                <CredentialsForm
-                    isLoading={isLoading}
-                    onSave={handleSaveCredentials}
-                />
+                <CredentialsForm />
+            ) : !isAuthenticated ? (
+                <AuthForm />
             ) : (
-                <p>✅ Credentials already saved. (Next steps: Auth, Upload, Files UI...)</p>
+                <>
+                    {/* File Upload Section */}
+                    <FileUpload />
+
+                    {/* Create Folder Section */}
+                    <CreateFolder />
+
+                    {/* Files List Section */}
+                    <FileList />
+                </>
             )}
         </>
     );
-};
+}
 
-export default App;
+export default WPMUDEV_DriveTest;

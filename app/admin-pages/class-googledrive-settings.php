@@ -17,6 +17,7 @@ namespace WPMUDEV\PluginTest\App\Admin_Pages;
 defined( 'WPINC' ) || die;
 
 use WPMUDEV\PluginTest\Base;
+use WPMUDEV\PluginTest\Endpoints\V1\Drive_API;
 
 class Google_Drive extends Base {
 	/**
@@ -41,13 +42,6 @@ class Google_Drive extends Base {
 	 * @var array
 	 */
 	private $creds = array();
-
-	/**
-	 * Option name for credentials (reusing the same as original auth).
-	 *
-	 * @var string
-	 */
-	private $option_name = 'wpmudev_plugin_tests_auth';
 
 	/**
 	 * Page Assets.
@@ -75,11 +69,10 @@ class Google_Drive extends Base {
 	 *
 	 * @return void
 	 * @since 1.0.0
-	 *
 	 */
 	public function init() {
 		$this->page_title     = __( 'Google Drive Test', 'wpmudev-plugin-test' );
-		$this->creds          = get_option( $this->option_name, array() );
+		$this->creds          = get_option( Drive_API::AUTH_CRED, array() );
 		$this->assets_version = ! empty( $this->script_data( 'version' ) ) ? $this->script_data( 'version' ) : WPMUDEV_PLUGINTEST_VERSION;
 		$this->unique_id      = "wpmudev_plugintest_drive_main_wrap-{$this->assets_version}";
 
@@ -163,9 +156,9 @@ class Google_Drive extends Base {
 	 * @return bool
 	 */
 	private function get_auth_status() {
-		$access_token = get_option( 'wpmudev_drive_access_token', '' );
-		$expires_at   = get_option( 'wpmudev_drive_token_expires', 0 );
-		
+		$access_token = get_option( Drive_API::ACCESS_TOKEN, '' );
+		$expires_at   = get_option( Drive_API::TOKEN_EXPIRES_IN, 0 );
+
 		return ! empty( $access_token ) && time() < $expires_at;
 	}
 
