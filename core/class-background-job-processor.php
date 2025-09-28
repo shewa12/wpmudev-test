@@ -93,10 +93,6 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 */
 	protected function __construct() {
 		parent::__construct();
-		if ( empty( $this->action ) ) {
-			throw new \Exception( 'Action property must be defined in the subclass.' );
-		}
-		add_action( $this->action, array( $this, 'process_job' ) );
 	}
 
 	/**
@@ -147,15 +143,29 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @throws \Exception If action or job id not set.
+	 *
 	 * @return void
 	 */
 	public function schedule() {
-		$this->args['id'] = uniqid();
-		if ( ! wp_next_scheduled( $this->action ) ) {
-			$scheduled = wp_schedule_single_event( time() + $this->schedule_interval, $this->action, $this->args );
-			if ( $scheduled ) {
-				error_log( 'job_scheduled' . $this->args['id'] );
-			}
+		$this->job_id = uniqid();
+		$args         = $this->args;
+
+		if ( empty( $this->action ) || empty( $this->job_id ) ) {
+			throw new \Exception( 'Action & job id property must be defined in the subclass.' );
+		}
+
+		if ( ! is_array( $args ) ) {
+			throw new \Exception( 'Args must be an array.' );
+		}
+
+		$args['job_id'] = $this->job_id;
+
+		$hook = $this->get_job_name( $this->job_id );
+		add_action( $hook, array( $this, 'process_job' ) );
+
+		if ( ! wp_next_scheduled( $hook ) ) {
+			wp_schedule_single_event( time() + $this->schedule_interval, $hook, array( $args ) );
 		}
 	}
 
@@ -171,7 +181,7 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 *
 	 * @return void
 	 */
-	public function process_job( $args ) {
+	public function process_job( array $args ) {
 		$job_id = $args['job_id'] ?? null;
 		if ( ! $job_id ) {
 			return;
@@ -202,15 +212,17 @@ abstract class BackgroundJobProcessor extends Singleton {
 			try {
 				$this->process_item( $item );
 			} catch ( \Throwable $th ) {
-				$job['error_log'][] = array(
+				$job['error_log'][]  = array(
 					'message' => $th->getMessage(),
 					'item'    => $item,
 				);
+				$job['failed_ids'][] = $item->get_item_id( $item );
 			} finally {
 				$job['processed_items']++;
-				$job['failed_ids'][] = $item->ID;
 			}
 		}
+
+		update_option( $this->get_job_name( $job_id ), $job );
 
 		$job['progress'] = (int) ceil( $job['processed_items'] / $job['total_items'] * 100 );
 
@@ -224,7 +236,8 @@ abstract class BackgroundJobProcessor extends Singleton {
 			return;
 		}
 
-		wp_schedule_single_event( time() + $this->schedule_interval, $this->action, $args );
+		$hook = $this->get_job_name( $job_id );
+		wp_schedule_single_event( time() + $this->schedule_interval, $hook, array( $args ) );
 	}
 
 	/**
@@ -314,6 +327,8 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 * @return string
 	 */
 	private function get_job_name( $job_id ) {
-		return $this->action . '_' . $job_id;
+		$job_name = $this->action . '_' . $job_id;
+
+		return $job_name;
 	}
 }

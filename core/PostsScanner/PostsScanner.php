@@ -34,6 +34,13 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	protected $name = 'Post Scan';
 
 	/**
+	 * Job arguments
+	 *
+	 * @var array
+	 */
+	protected $args;
+
+	/**
 	 * Action
 	 *
 	 * @since 1.0.0
@@ -70,8 +77,7 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 * @return void
 	 */
 	public function scan( array $args ) {
-		$this->args   = $args;
-		$this->action = $this->action . '_' . wp_unique_id();
+		$this->args = $args;
 		$this->schedule();
 	}
 
@@ -85,7 +91,7 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 */
 	protected function get_total_items( $args ): int {
 		$args = array(
-			'post_type'      => $args,
+			'post_type'      => $args['post_type'],
 			'post_status'    => 'publish',
 			'posts_per_page' => -1, // Get all.
 			'fields'         => 'ids',
@@ -110,7 +116,7 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 */
 	protected function get_items( $offset, $limit, $args ) : array {
 		$args = array(
-			'post_type'      => $args,
+			'post_type'      => $args['post_type'],
 			'post_status'    => 'publish',
 			'posts_per_page' => $limit,
 			'offset'         => $offset,

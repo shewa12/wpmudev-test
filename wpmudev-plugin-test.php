@@ -103,10 +103,6 @@ add_action(
 	'init',
 	function () {
 		WPMUDEV_PluginTest::get_instance()->load();
-
-		$scanner = PostsScanner::instance();
-		$command = new PostsScanCommand( $scanner );
-		$command->execute( array( 'post', 'page' ) );
 	},
 	9
 );
