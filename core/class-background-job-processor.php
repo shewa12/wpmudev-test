@@ -183,6 +183,7 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 * @return void
 	 */
 	public function process_job( array $args ) {
+
 		$job_id = $args['job_id'] ?? null;
 		if ( ! $job_id ) {
 			return;
