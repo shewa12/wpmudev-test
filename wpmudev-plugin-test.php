@@ -13,6 +13,8 @@
  * @package           create-block
  */
 
+use WPMUDEV\PluginTestCore\PostsScanner\PostsScanCommand;
+use WPMUDEV\PluginTestCore\PostsScanner\PostsScanner;
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
@@ -101,6 +103,10 @@ add_action(
 	'init',
 	function () {
 		WPMUDEV_PluginTest::get_instance()->load();
+
+		$scanner = PostsScanner::instance();
+		$command = new PostsScanCommand( $scanner );
+		$command->execute( array( 'post', 'page' ) );
 	},
 	9
 );

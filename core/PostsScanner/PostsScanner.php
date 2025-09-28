@@ -23,6 +23,7 @@ defined( 'ABSPATH' ) || exit;
  * @since 1.0.0
  */
 class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
+
 	/**
 	 * Name of the process
 	 *
@@ -48,7 +49,7 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 *
 	 * @var integer
 	 */
-	protected $batch_size = 100;
+	protected $batch_size = 10;
 
 	/**
 	 * Schedule interval.
@@ -69,7 +70,8 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 * @return void
 	 */
 	public function scan( array $args ) {
-		$this->args = $args;
+		$this->args   = $args;
+		$this->action = $this->action . '_' . wp_unique_id();
 		$this->schedule();
 	}
 
@@ -123,6 +125,8 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 *
 	 * @since 1.0.0
 	 *
+	 * @throws \Exception If there is an error during processing.
+	 *
 	 * @param object $item item.
 	 *
 	 * @return void
@@ -140,5 +144,18 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 */
 	protected function on_complete() {
 		error_log( 'Post scan completed!' );
+	}
+
+	/**
+	 * Get item id
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Post $item WP_Post object.
+	 *
+	 * @return int
+	 */
+	public function get_item_id( $item ) {
+		return $item->ID;
 	}
 }

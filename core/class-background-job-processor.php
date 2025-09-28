@@ -1,6 +1,8 @@
 <?php
 /**
- * Class to handle process large amount of data with batch.
+ * Class to background job
+ *
+ * This abstract class can be used to do the background job
  *
  * @link    https://wpmudev.com/
  * @since   1.0.0
@@ -21,9 +23,19 @@ namespace WPMUDEV\PluginTest;
 abstract class BackgroundJobProcessor extends Singleton {
 
 	/**
+	 * Unique job id
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var string
+	 */
+
+	private $job_id;
+
+	/**
 	 * Job arguments
 	 *
-	 * @var mixed
+	 * @var array
 	 */
 	protected $args;
 
@@ -55,15 +67,6 @@ abstract class BackgroundJobProcessor extends Singleton {
 	protected $progress_option;
 
 	/**
-	 * Manage child class as singleton behavior.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @var object
-	 */
-	protected static $instance = null;
-
-	/**
 	 * Action name to invoke wp-cron.
 	 *
 	 * @since 1.0.0
@@ -73,7 +76,7 @@ abstract class BackgroundJobProcessor extends Singleton {
 	protected $action;
 
 	/**
-	 * Name of the process.
+	 * Readable Name of the process.
 	 *
 	 * @since 1.0.0
 	 *
@@ -90,12 +93,9 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 */
 	protected function __construct() {
 		parent::__construct();
-
 		if ( empty( $this->action ) ) {
 			throw new \Exception( 'Action property must be defined in the subclass.' );
 		}
-
-		$this->progress_option = $this->action;
 		add_action( $this->action, array( $this, 'process_job' ) );
 	}
 
@@ -133,6 +133,8 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 *
 	 * @param mixed $item item.
 	 *
+	 * @throws \Exception If failed to process.
+	 *
 	 * @return void
 	 */
 	abstract protected function process_item( $item) : void;
@@ -148,8 +150,12 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 * @return void
 	 */
 	public function schedule() {
+		$this->args['id'] = uniqid();
 		if ( ! wp_next_scheduled( $this->action ) ) {
-			wp_schedule_single_event( time() + $this->schedule_interval, $this->action, $this->args );
+			$scheduled = wp_schedule_single_event( time() + $this->schedule_interval, $this->action, $this->args );
+			if ( $scheduled ) {
+				error_log( 'job_scheduled' . $this->args['id'] );
+			}
 		}
 	}
 
@@ -166,72 +172,59 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 * @return void
 	 */
 	public function process_job( $args ) {
-		$progress = get_option(
-			$this->progress_option,
-			array(
-				'name'          => $this->name,
-				'started_at'    => gmdate( 'Y-m-d H:i:s' ),
-				'completed_at'  => null,
-				'offset'        => 0,
-				'completed'     => false,
-				'total_items'   => null,
-				'total_batch'   => null,
-				'per_batch'     => $this->batch_size,
-				'current_batch' => 1,
-			)
-		);
+		$job_id = $args['job_id'] ?? null;
+		if ( ! $job_id ) {
+			return;
+		}
 
-		if ( $progress['completed'] ) {
+		$job = $this->get_job_schema( $job_id );
+
+		if ( $job['completed'] ) {
 			return;
 		}
 
 		// Set total_items and total_batch if not already set.
-		if ( is_null( $progress['total_items'] ) ) {
-			$progress['total_items'] = $this->get_total_items( $args );
-			$progress['total_batch'] = (int) ceil( $progress['total_items'] / $progress['per_batch'] );
+		if ( is_null( $job['total_items'] ) ) {
+			$total_items = $this->get_total_items( $args );
+			if ( ! $total_items ) {
+				$job['feedback_msg'] = __( 'No items available to process', 'wpmudev-plugin-test' );
+				$job['completed']    = 1;
+				update_option( $this->get_job_name( $job_id ), $job );
+				return;
+			}
+
+			$job['total_items'] = $total_items;
 		}
 
-		$items = $this->get_items( $progress['offset'], $this->batch_size, $args );
+		$items = $this->get_items( $job['processed_items'], $this->batch_size, $args );
 
-		if ( empty( $items ) ) {
-			$this->mark_complete();
+		foreach ( $items as $item ) {
+			try {
+				$this->process_item( $item );
+			} catch ( \Throwable $th ) {
+				$job['error_log'][] = array(
+					'message' => $th->getMessage(),
+					'item'    => $item,
+				);
+			} finally {
+				$job['processed_items']++;
+				$job['failed_ids'][] = $item->ID;
+			}
+		}
+
+		$job['progress'] = (int) ceil( $job['processed_items'] / $job['total_items'] * 100 );
+
+		if ( $job['progress'] >= 100 ) {
+			$job['completed']    = 1;
+			$job['completed_at'] = gmdate( 'Y-m-d H:i:s' );
+			$job['feedback_msg'] = __( 'Completed', 'wpmudev-plugin-test' );
+			update_option( $this->get_job_name( $job_id ), $job );
+
+			$this->on_complete();
 			return;
 		}
 
-		foreach ( $items as $item ) {
-			$this->process_item( $item );
-		}
-
-		$progress['offset']       += count( $items );
-		$progress['current_batch'] = (int) ceil( $progress['offset'] / $progress['per_batch'] );
-		update_option( $this->progress_option, $progress );
-
 		wp_schedule_single_event( time() + $this->schedule_interval, $this->action, $args );
-	}
-
-	/**
-	 * Mark the batch processing as complete.
-	 *
-	 * This method updates the progress option to indicate that the batch processing is complete
-	 * and calls the optional `on_complete` method for any additional actions needed upon completion.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return void
-	 */
-	protected function mark_complete() {
-		$data = wp_parse_args(
-			array(
-				'offset'       => 0,
-				'completed'    => true,
-				'completed_at' => gmdate( 'Y-m-d H:i:s' ),
-			),
-			$this->get_stats()
-		);
-
-		update_option( $this->progress_option, $data );
-
-		$this->on_complete();
 	}
 
 	/**
@@ -242,18 +235,6 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 * @return void
 	 */
 	protected function on_complete() {}
-
-	/**
-	 * Check is complete.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return boolean
-	 */
-	public function is_completed(): bool {
-		$progress = get_option( $this->progress_option, array() );
-		return ! empty( $progress['completed'] );
-	}
 
 	/**
 	 * Get the progress option name.
@@ -267,35 +248,72 @@ abstract class BackgroundJobProcessor extends Singleton {
 	}
 
 	/**
-	 * Get the progress stats.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return array
-	 */
-	public function get_stats(): array {
-		$progress = get_option( $this->progress_option, array() );
-		return wp_parse_args(
-			$progress,
-			array(
-				'offset'        => 0,
-				'completed'     => false,
-				'total_items'   => 0,
-				'total_batch'   => 0,
-				'per_batch'     => $this->batch_size,
-				'current_batch' => 1,
-			)
-		);
-	}
-
-	/**
 	 * Reset the progress option.
 	 *
 	 * @since 1.0.0
 	 *
+	 * @param mixed $job_id Job id.
+	 *
 	 * @return void
 	 */
-	public function reset() {
-		delete_option( $this->progress_option );
+	public function reset( $job_id ) {
+		delete_option( $this->get_job_name( $job_id ) );
+	}
+
+	/**
+	 * Get item id
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $item Item to fetch id.
+	 *
+	 * @return int
+	 */
+	abstract public function get_item_id( $item );
+
+	/**
+	 * Get job schema
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param mixed $job_id Job id.
+	 *
+	 * @return array
+	 */
+	private function get_job_schema( $job_id ) {
+		$job = get_option( $this->get_job_name( $job_id ) );
+		if ( $job ) {
+			return $job;
+		}
+
+		$job = get_option(
+			$this->get_job_name( $job_id ),
+			array(
+				'name'            => $this->name,
+				'started_at'      => gmdate( 'Y-m-d H:i:s' ),
+				'completed_at'    => null,
+				'completed'       => 0,
+				'total_items'     => null,
+				'processed_items' => 0,
+				'progress'        => 0,
+				'per_batch'       => $this->batch_size,
+				'feedback_msg'    => '',
+				'failed_ids'      => array(),
+				'error_log'       => array(),
+			)
+		);
+
+		return $job;
+	}
+
+	/**
+	 * Get job name
+	 *
+	 * @param mixed $job_id Job id.
+	 *
+	 * @return string
+	 */
+	private function get_job_name( $job_id ) {
+		return $this->action . '_' . $job_id;
 	}
 }
