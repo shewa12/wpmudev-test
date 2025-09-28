@@ -93,6 +93,8 @@ abstract class BackgroundJobProcessor extends Singleton {
 	 */
 	protected function __construct() {
 		parent::__construct();
+
+		add_action( $this->action, array( $this, 'process_job' ) );
 	}
 
 	/**
@@ -151,7 +153,7 @@ abstract class BackgroundJobProcessor extends Singleton {
 		$this->job_id = uniqid();
 		$args         = $this->args;
 
-		if ( empty( $this->action ) || empty( $this->job_id ) ) {
+		if ( empty( $this->action ) ) {
 			throw new \Exception( 'Action & job id property must be defined in the subclass.' );
 		}
 
@@ -161,8 +163,7 @@ abstract class BackgroundJobProcessor extends Singleton {
 
 		$args['job_id'] = $this->job_id;
 
-		$hook = $this->get_job_name( $this->job_id );
-		add_action( $hook, array( $this, 'process_job' ) );
+		$hook = $this->action;
 
 		if ( ! wp_next_scheduled( $hook ) ) {
 			wp_schedule_single_event( time() + $this->schedule_interval, $hook, array( $args ) );
@@ -236,7 +237,7 @@ abstract class BackgroundJobProcessor extends Singleton {
 			return;
 		}
 
-		$hook = $this->get_job_name( $job_id );
+		$hook = $this->action;
 		wp_schedule_single_event( time() + $this->schedule_interval, $hook, array( $args ) );
 	}
 

@@ -39,6 +39,7 @@ class Posts_Maintenance extends Base {
 	public function init() {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'rest_init', array( $this, 'register_rest_routes' ) );
 	}
 
 	/**
@@ -111,5 +112,15 @@ class Posts_Maintenance extends Base {
 			<div id="<?php echo esc_attr( $this->page_id ); ?>"></div>
 		</div>
 		<?php
+	}
+
+	public function register_rest_route() {
+		$scanner = PostsScanner::instance();
+		$command = new PostsScanCommand( $scanner );
+
+		$args = array(
+			'post_type' => array( 'post', 'page' ),
+		);
+		$command->execute( $args );
 	}
 }

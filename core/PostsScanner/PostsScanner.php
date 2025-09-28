@@ -65,7 +65,7 @@ class PostsScanner extends BackgroundJobProcessor implements ScannerInterface {
 	 *
 	 * @var integer
 	 */
-	protected $schedule_interval = 1;
+	protected $schedule_interval = 2;
 
 	/**
 	 * Start scanning
