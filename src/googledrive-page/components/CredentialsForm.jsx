@@ -41,7 +41,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                                     ),
                                 }
                             )}
-                            {...register('clientId', {
+                            {...register('client_id', {
                                 required: __(
                                     'Client ID is required',
                                     'wpmudev-plugin-test'
@@ -49,7 +49,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                             })}
                         />
                         {errors.clientId && (
-                            <p className="form-error" style={{color: 'tomato'}}>{errors.clientId.message}</p>
+                            <p className="form-error">{errors.clientId.message}</p>
                         )}
                     </div>
 
@@ -72,7 +72,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                                     ),
                                 }
                             )}
-                            {...register('clientSecret', {
+                            {...register('client_secret', {
                                 required: __(
                                     'Client Secret is required',
                                     'wpmudev-plugin-test'
@@ -80,7 +80,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                             })}
                         />
                         {errors.clientSecret && (
-                            <p className="form-error" style={{color: 'tomato'}}>
+                            <p className="form-error" style={{}}>
                                 {errors.clientSecret.message}
                             </p>
                         )}

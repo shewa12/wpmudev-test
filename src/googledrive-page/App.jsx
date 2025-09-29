@@ -47,7 +47,23 @@ const WPMUDEV_DriveTest = () => {
     setTimeout(() => setNotice({ message: "", type: "" }), 5000);
   };
 
-  const handleSaveCredentials = async () => {};
+  const handleSaveCredentials = async (credentials) => {
+    try {
+      setIsLoading(true);
+      const res = await saveCredentials(credentials);
+      const { success, message } = res;
+      if (success) {
+        showNotice(message);
+        handleAuth();
+      } else {
+        showNotice(message, "error");
+      }
+    } catch (error) {
+      showNotice(error.message, "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAuth = async () => {
     try {
@@ -108,7 +124,7 @@ const WPMUDEV_DriveTest = () => {
       }}/>
 
       {!hasCredentials ? (
-        <CredentialsForm />
+        <CredentialsForm isLoading={isLoading} onSave={handleSaveCredentials}/>
       ) : !isAuthenticated ? (
         <AuthForm handleAuth={handleAuth} isLoading={isLoading} />
       ) : (
