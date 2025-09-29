@@ -1,9 +1,14 @@
 import { Button, TextControl, Spinner } from '@wordpress/components';
 import { createInterpolateElement } from '@wordpress/element';
 import { useForm } from 'react-hook-form';
+import { __ } from '@wordpress/i18n';
 
 const CredentialsForm = ({ isLoading, onSave }) => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm();
 
     const onSubmit = (data) => {
         onSave(data);
@@ -12,41 +17,88 @@ const CredentialsForm = ({ isLoading, onSave }) => {
     return (
         <div className="sui-box">
             <div className="sui-box-header">
-                <h2 className="sui-box-title">Set Google Drive Credentials</h2>
+                <h2 className="sui-box-title">
+                    {__('Set Google Drive Credentials', 'wpmudev-plugin-test')}
+                </h2>
             </div>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="sui-box-body">
                     <div className="sui-box-settings-row">
                         <TextControl
-                            label="Client ID"
+                            label={__('Client ID', 'wpmudev-plugin-test')}
                             help={createInterpolateElement(
-                                'You can get Client ID from <a>Google Cloud Console</a>. Make sure to enable Google Drive API.',
+                                __(
+                                    'You can get Client ID from <a>Google Cloud Console</a>. Make sure to enable Google Drive API.',
+                                    'wpmudev-plugin-test'
+                                ),
                                 {
-                                    a: <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" />,
+                                    a: (
+                                        <a
+                                            href="https://console.cloud.google.com/apis/credentials"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        />
+                                    ),
                                 }
                             )}
-                            {...register("clientId", { required: "Client ID is required" })}
+                            {...register('clientId', {
+                                required: __(
+                                    'Client ID is required',
+                                    'wpmudev-plugin-test'
+                                ),
+                            })}
                         />
-                        {errors.clientId && <p className="form-error">{errors.clientId.message}</p>}
+                        {errors.clientId && (
+                            <p className="form-error">{errors.clientId.message}</p>
+                        )}
                     </div>
 
                     <div className="sui-box-settings-row">
                         <TextControl
-                            label="Client Secret"
+                            label={__('Client Secret', 'wpmudev-plugin-test')}
                             type="password"
                             help={createInterpolateElement(
-                                'You can get Client Secret from <a>Google Cloud Console</a>.',
+                                __(
+                                    'You can get Client Secret from <a>Google Cloud Console</a>.',
+                                    'wpmudev-plugin-test'
+                                ),
                                 {
-                                    a: <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" />,
+                                    a: (
+                                        <a
+                                            href="https://console.cloud.google.com/apis/credentials"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        />
+                                    ),
                                 }
                             )}
-                            {...register("clientSecret", { required: "Client Secret is required" })}
+                            {...register('clientSecret', {
+                                required: __(
+                                    'Client Secret is required',
+                                    'wpmudev-plugin-test'
+                                ),
+                            })}
                         />
-                        {errors.clientSecret && <p className="form-error">{errors.clientSecret.message}</p>}
+                        {errors.clientSecret && (
+                            <p className="form-error">
+                                {errors.clientSecret.message}
+                            </p>
+                        )}
                     </div>
 
                     <div className="sui-box-settings-row">
-                        <span>Please use this URL <em>{window.wpmudevDriveTest.redirectUri}</em> in your Google API’s <strong>Authorized redirect URIs</strong> field.</span>
+                        <span>
+                            {createInterpolateElement(
+                                __(
+                                    'Please use this URL <em>{{url}}</em> in your Google API’s <strong>Authorized redirect URIs</strong> field.',
+                                    'wpmudev-plugin-test'
+                                ),
+                                {
+                                    em: <em>{window.wpmudevDriveTest.redirectUri}</em>,
+                                    strong: <strong />,
+                                }
+                            )}
+                        </span>
                     </div>
                 </div>
                 <div className="sui-box-footer">
@@ -56,7 +108,11 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                             variant="primary"
                             disabled={isLoading}
                         >
-                            {isLoading ? <Spinner /> : 'Save Credentials'}
+                            {isLoading ? (
+                                <Spinner />
+                            ) : (
+                                __('Save Credentials', 'wpmudev-plugin-test')
+                            )}
                         </Button>
                     </div>
                 </div>
