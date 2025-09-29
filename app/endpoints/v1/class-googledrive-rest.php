@@ -94,9 +94,12 @@ class Drive_API extends Base {
 			return;
 		}
 
+		$client_id     = $this->decrypt( $auth_creds['client_id'] );
+		$client_secret = $this->decrypt( $auth_creds['client_secret'] );
+
 		$this->client = new Google_Client();
-		$this->client->setClientId( $auth_creds['client_id'] );
-		$this->client->setClientSecret( $auth_creds['client_secret'] );
+		$this->client->setClientId( $client_id );
+		$this->client->setClientSecret( $client_secret );
 		$this->client->setRedirectUri( $this->redirect_uri );
 		$this->client->setScopes( $this->scopes );
 		$this->client->setAccessType( 'offline' );
@@ -198,16 +201,17 @@ class Drive_API extends Base {
 				array(
 					'success' => false,
 					'message' => 'Client ID and Client Secret are required',
-				)
+				),
+				400
 			);
 		}
 
 		$credentials = array(
-			'client_id'     => $client_id,
-			'client_secret' => $client_secret,
+			'client_id'     => $this->encrypt( $client_id ),
+			'client_secret' => $this->encrypt( $client_secret ),
 		);
 
-		update_option( self::AUTH_CRED, $credentials );
+		update_option( self::AUTH_CRED, $credentials, false );
 
 		// Reinitialize client.
 		$this->setup_google_client();
@@ -501,5 +505,48 @@ class Drive_API extends Base {
 		} catch ( Exception $e ) {
 			return new WP_Error( 'create_failed', $e->getMessage(), array( 'status' => 500 ) );
 		}
+	}
+
+	/**
+	 * Encrypt string
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $string String to encrypt.
+	 * @param string $key Extra key.
+	 *
+	 * @return string
+	 */
+	public function encrypt( string $string, string $key = 'wpmudev' ): string {
+		$cipher    = 'AES-256-CBC';
+		$iv_length = openssl_cipher_iv_length( $cipher );
+		$iv        = openssl_random_pseudo_bytes( $iv_length );
+
+		$encrypted = openssl_encrypt( $string, $cipher, $key, 0, $iv );
+		return base64_encode( $iv . $encrypted );
+	}
+
+	/**
+	 * Decrypt string
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $string String to decrypt.
+	 * @param string $key Extra key.
+	 *
+	 * @return string
+	 */
+	public function decrypt( string $string, string $key = 'wpmudev' ): string {
+		$cipher    = 'AES-256-CBC';
+		$iv_length = openssl_cipher_iv_length( $cipher );
+
+		$decoded = base64_decode( $string );
+
+		$iv        = substr( $decoded, 0, $iv_length );
+		$encrypted = substr( $decoded, $iv_length );
+
+		$decrypted = openssl_decrypt( $encrypted, $cipher, $key, 0, $iv );
+
+		return $decrypted;
 	}
 }
