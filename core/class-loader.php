@@ -24,7 +24,6 @@ final class Loader extends Base {
 	 *
 	 * @since 1.0.0
 	 * @var object
-	 *
 	 */
 	public $settings;
 
@@ -33,7 +32,6 @@ final class Loader extends Base {
 	 *
 	 * @since  1.0.0
 	 * @var float
-	 *
 	 */
 	public $php_version = '7.4';
 
@@ -42,7 +40,6 @@ final class Loader extends Base {
 	 *
 	 * @since  1.0.0
 	 * @var float
-	 *
 	 */
 	public $wp_version = '6.1';
 
@@ -93,6 +90,8 @@ final class Loader extends Base {
 	 */
 	private function init() {
 		App\Admin_Pages\Google_Drive::instance()->init();
+		App\Admin_Pages\Posts_Maintenance::instance()->init();
 		Endpoints\V1\Drive_API::instance()->init();
+		Endpoints\V1\Post_Scanner_API::instance()->init();
 	}
 }
