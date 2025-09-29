@@ -23,7 +23,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
             </div>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="sui-box-body">
-                    <div className="sui-box-settings-row">
+                    <div className="sui-box-settings-row" style={{flexDirection: 'column'}}>
                         <TextControl
                             label={__('Client ID', 'wpmudev-plugin-test')}
                             help={createInterpolateElement(
@@ -49,11 +49,11 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                             })}
                         />
                         {errors.clientId && (
-                            <p className="form-error">{errors.clientId.message}</p>
+                            <p className="form-error" style={{color: 'tomato'}}>{errors.clientId.message}</p>
                         )}
                     </div>
 
-                    <div className="sui-box-settings-row">
+                    <div className="sui-box-settings-row" style={{flexDirection: 'column'}} >
                         <TextControl
                             label={__('Client Secret', 'wpmudev-plugin-test')}
                             type="password"
@@ -80,7 +80,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                             })}
                         />
                         {errors.clientSecret && (
-                            <p className="form-error">
+                            <p className="form-error" style={{color: 'tomato'}}>
                                 {errors.clientSecret.message}
                             </p>
                         )}
