@@ -332,8 +332,8 @@ class Drive_API extends Base {
 					return false;
 				}
 
-				update_option( self::ACCESS_TOKEN, 'NEW TOKEN' );
-				update_option( self::TOKEN_EXPIRES_IN, 'NEW EXPIRATION TIME' );
+				update_option( self::ACCESS_TOKEN, $new_token['access_token'] );
+				update_option( self::TOKEN_EXPIRES_IN, $new_token['expires_in'] );
 
 				return true;
 			} catch ( \Exception $e ) {
@@ -381,8 +381,12 @@ class Drive_API extends Base {
 				);
 			}
 
-			return true;
-
+			return $this->send_response(
+				array(
+					'success' => true,
+					'files'   => $file_list,
+				)
+			);
 		} catch ( Exception $e ) {
 			return new WP_Error( 'api_error', $e->getMessage(), array( 'status' => 500 ) );
 		}

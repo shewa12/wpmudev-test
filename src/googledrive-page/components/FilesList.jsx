@@ -1,6 +1,16 @@
 import { Button, Spinner } from "@wordpress/components";
+import { useQuery } from "@tanstack/react-query";
 
 const FilesList = ({files, loadFiles, isLoading}) => {
+    const {isPending, error, data } = useQuery(
+    {
+      queryKey: ["getFiles"],
+      queryFn: async () => {
+        const res = await getFiles();
+        console.log(res)
+      },
+    }
+  );
   return (
     <>
       <div className="sui-box">
