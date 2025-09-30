@@ -23,12 +23,14 @@ const WPMUDEV_DriveTest = () => {
     downloadFile,
     createFolder,
   } = useDriveService();
+
   const [isAuthenticated, setIsAuthenticated] = useState(
     window.wpmudevDriveTest.authStatus || false
   );
   const [hasCredentials, setHasCredentials] = useState(
     window.wpmudevDriveTest.hasCredentials || false
   );
+  const [showCredentials, setShowCredentials] = useState( !hasCredentials);
 
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState([]);
@@ -123,10 +125,10 @@ const WPMUDEV_DriveTest = () => {
         showNotice("", "success")
       }}/>
 
-      {!hasCredentials ? (
+      {!hasCredentials || showCredentials? (
         <CredentialsForm isLoading={isLoading} onSave={handleSaveCredentials}/>
       ) : !isAuthenticated ? (
-        <AuthForm handleAuth={handleAuth} isLoading={isLoading} />
+        <AuthForm handleAuth={handleAuth} isLoading={isLoading} setShowCredentials={setShowCredentials}/>
       ) : (
         <>
           {/* File Upload Section */}
@@ -136,7 +138,7 @@ const WPMUDEV_DriveTest = () => {
           <CreateFolder handleCreateFolder={handleCreateFolder} isLoading={isLoading}/>
 
           {/* Files List Section */}
-          <FilesList files={files} loadFiles={loadFiles} isLoading={isLoading}/>
+          <FilesList />
         </>
       )}
     </>
