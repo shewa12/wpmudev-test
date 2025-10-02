@@ -39,12 +39,15 @@ const FilesList = ({ files, isLoading, error, onRefresh }) => {
                                             {__("File type: ", "wpmudev-plugin-test")}
                                             {file.mimeType}
                                         </small>
-                                        <small>
-                                            {sprintf(
-                                                __("File size: %d kb", "wpmudev-plugin-test"),
-                                                file.size
-                                            )}
-                                        </small>
+                                        {
+                                            file.size &&
+                                            <small>
+                                                {sprintf(
+                                                    __("File size: %d kb", "wpmudev-plugin-test"),
+                                                    file.size
+                                                )}
+                                            </small>
+                                        }
                                         <small>
                                             {file.modifiedTime
                                                 ? sprintf(
