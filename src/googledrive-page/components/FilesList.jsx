@@ -69,6 +69,13 @@ const FilesList = ({ files, isLoading, error, onRefresh }) => {
                                             {__("View in Drive", "wpmudev-plugin-test")}
                                         </Button>
                                     )}
+                                    <Button
+                                        variant="link"
+                                        size="small"
+                                        href={file.webViewLink}
+                                    >
+                                        {__("Download", "wpmudev-plugin-test")}
+                                    </Button>
                                 </div>
                             </div>
                         ))}

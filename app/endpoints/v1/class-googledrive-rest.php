@@ -492,7 +492,7 @@ class Drive_API extends Base {
 			$content = $response->getBody()->getContents();
 
 			// Return file content as base64 for JSON response.
-			return new WP_REST_Response(
+			return $this->send_response(
 				array(
 					'success'  => true,
 					'content'  => base64_encode( $content ),
