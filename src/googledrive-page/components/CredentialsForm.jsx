@@ -3,6 +3,7 @@ import { createInterpolateElement } from '@wordpress/element';
 import { useForm } from 'react-hook-form';
 import { __ } from '@wordpress/i18n';
 
+console.log(window.wpmudevDriveTest.redirectUri);
 const CredentialsForm = ({ isLoading, onSave }) => {
     const {
         register,
@@ -23,7 +24,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
             </div>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className="sui-box-body">
-                    <div className="sui-box-settings-row" style={{flexDirection: 'column'}}>
+                    <div className="sui-box-settings-row" style={{ flexDirection: 'column' }}>
                         <TextControl
                             label={__('Client ID', 'wpmudev-plugin-test')}
                             help={createInterpolateElement(
@@ -53,7 +54,7 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                         )}
                     </div>
 
-                    <div className="sui-box-settings-row" style={{flexDirection: 'column'}} >
+                    <div className="sui-box-settings-row" style={{ flexDirection: 'column' }} >
                         <TextControl
                             label={__('Client Secret', 'wpmudev-plugin-test')}
                             type="password"
@@ -90,11 +91,11 @@ const CredentialsForm = ({ isLoading, onSave }) => {
                         <span>
                             {createInterpolateElement(
                                 __(
-                                    'Please use this URL <em>{{url}}</em> in your Google API’s <strong>Authorized redirect URIs</strong> field.',
+                                    'Please use this URL <url></url> in your Google API’s <strong>Authorized redirect URIs</strong> field.',
                                     'wpmudev-plugin-test'
                                 ),
                                 {
-                                    em: <em>{window.wpmudevDriveTest.redirectUri}</em>,
+                                    url: <em>{window.wpmudevDriveTest.redirectUri}</em>,
                                     strong: <strong />,
                                 }
                             )}
