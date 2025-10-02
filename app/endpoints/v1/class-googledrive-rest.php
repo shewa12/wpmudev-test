@@ -538,7 +538,7 @@ class Drive_API extends Base {
 				)
 			);
 
-			return new WP_REST_Response(
+			return $this->send_response(
 				array(
 					'success' => true,
 					'folder'  => array(
@@ -549,7 +549,6 @@ class Drive_API extends Base {
 					),
 				)
 			);
-
 		} catch ( Exception $e ) {
 			return new WP_Error( 'create_failed', $e->getMessage(), array( 'status' => 500 ) );
 		}
