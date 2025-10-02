@@ -403,19 +403,19 @@ class Drive_API extends Base {
 	 */
 	public function upload_file( WP_REST_Request $request ) {
 		if ( ! $this->ensure_valid_token() ) {
-			return new WP_Error( 'no_access_token', 'Not authenticated with Google Drive', array( 'status' => 401 ) );
+			return new WP_Error( 'no_access_token', __( 'Not authenticated with Google Drive', 'wpmudev-plugin-test' ), array( 'status' => 401 ) );
 		}
 
 		$files = $request->get_file_params();
 
 		if ( empty( $files['file'] ) ) {
-			return new WP_Error( 'no_file', 'No file provided', array( 'status' => 400 ) );
+			return new WP_Error( 'no_file', __( 'No file provided', 'wpmudev-plugin-test' ), array( 'status' => 400 ) );
 		}
 
 		$file = $files['file'];
 
 		if ( $file['error'] !== UPLOAD_ERR_OK ) {
-			return new WP_Error( 'upload_error', 'File upload error', array( 'status' => 400 ) );
+			return new WP_Error( 'upload_error', __( 'File upload error', 'wpmudev-plugin-test' ), array( 'status' => 400 ) );
 		}
 
 		try {
@@ -434,7 +434,7 @@ class Drive_API extends Base {
 				)
 			);
 
-			return new WP_REST_Response(
+			return $this->send_response(
 				array(
 					'success' => true,
 					'file'    => array(

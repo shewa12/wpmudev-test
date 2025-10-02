@@ -3,12 +3,31 @@ import { Button, Spinner, TextControl } from "@wordpress/components";
 import { __ } from "@wordpress/i18n";
 import NoticeMessage from './NoticeMessage';
 
-const CreateFolder = ({ handleCreateFolder, isCreatingFolder, notice }) => {
+const CreateFolder = ({ handleCreateFolder, isCreatingFolder }) => {
     const [folderName, setFolderName] = useState("");
     const [showNotice, setShowNotice] = useState(true);
+    const [notice, setNotice] = useState({ type: '', message: '' });
+    const createFolder = async () => {
+        try {
+            await handleCreateFolder(folderName);
+            setFolderName('');
+            setNotice({ type: 'success', message: __('Folder created successfully', 'wpmudev-plugin-test') });
+            setShowNotice(true);
+        } catch (error) {
+            setNotice({ type: 'error', message: error.message });
+            setShowNotice(true);
+        }
+    }
+
     return (
         <>
             <div className="sui-box">
+                {
+                    showNotice && notice && notice.message &&
+                    <div className='sui-box'>
+                        <NoticeMessage {...notice} onRemove={() => { setShowNotice(false) }} />
+                    </div>
+                }
                 <div className="sui-box-header">
                     <h2 className="sui-box-title">
                         {__('Create New Folder', 'wpmudev-plugin-test')}
@@ -28,10 +47,7 @@ const CreateFolder = ({ handleCreateFolder, isCreatingFolder, notice }) => {
                     <div className="sui-actions-right">
                         <Button
                             variant="secondary"
-                            onClick={() => {
-                                handleCreateFolder(folderName);
-                                setFolderName('');
-                            }}
+                            onClick={createFolder}
                             disabled={isCreatingFolder || !folderName.trim()}
                         >
                             {isCreatingFolder ? <Spinner /> : __("Create Folder", 'wpmudev-plugin-test')}
@@ -39,12 +55,6 @@ const CreateFolder = ({ handleCreateFolder, isCreatingFolder, notice }) => {
                     </div>
                 </div>
             </div>
-            {
-                showNotice && notice && notice.message &&
-                <div className='sui-box'>
-                    <NoticeMessage {...notice} onRemove={() => { setShowNotice(false) }} />
-                </div>
-            }
         </>
     );
 };
