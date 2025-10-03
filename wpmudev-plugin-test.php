@@ -13,8 +13,10 @@
  * @package           create-block
  */
 
+use WPMUDEV\PluginTestCore\Database\Migration;
 use WPMUDEV\PluginTestCore\PostsScanner\PostsScanCommand;
 use WPMUDEV\PluginTestCore\PostsScanner\PostsScanner;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
@@ -55,6 +57,7 @@ if ( ! defined( 'WPMUDEV_PLUGINTEST_SUI_VERSION' ) ) {
 	define( 'WPMUDEV_PLUGINTEST_SUI_VERSION', '2.12.23' );
 }
 
+register_activation_hook( __FILE__, array( Migration::class, 'migrate_tables' ) );
 
 /**
  * WPMUDEV_PluginTest class.
