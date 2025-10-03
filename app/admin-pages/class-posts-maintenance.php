@@ -14,6 +14,8 @@
 namespace WPMUDEV\PluginTest\App\Admin_Pages;
 
 use WPMUDEV\PluginTest\Base;
+use WPMUDEV\PluginTestCore\PostsScanner\PostsScanCommand;
+use WPMUDEV\PluginTestCore\PostsScanner\PostsScanner;
 
 defined( 'ABSPATH' ) || exit;
 
