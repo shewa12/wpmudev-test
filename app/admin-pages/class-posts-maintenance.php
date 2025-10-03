@@ -85,6 +85,7 @@ class Posts_Maintenance extends Base {
 				'react',
 				'wp-element',
 				'wp-i18n',
+				'wp-components',
 			),
 			filemtime( $src_path ),
 			true

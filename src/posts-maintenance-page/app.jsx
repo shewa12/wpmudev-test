@@ -8,7 +8,6 @@ const PostsMaintenanceApp = () => {
 
     const handleScan = async () => {
         setIsLoading(true);
-        setNotice(null);
 
         try {
             const response = await fetch(wpmudevPostsMaintenance.restUrl, {
@@ -51,20 +50,11 @@ const PostsMaintenanceApp = () => {
             <h3>{__('Posts Maintenance', 'wpmudev-plugin-test')}</h3>
 
             <Button
-                isPrimary
                 onClick={handleScan}
                 disabled={isLoading}
             >
-                {isLoading ? __('Scanning...', 'wpmudev-plugin-test') : __('Scan Posts', 'wpmudev-plugin-test')}
+                {isLoading ? <Spinner /> : __('Scan Posts', 'wpmudev-plugin-test')}
             </Button>
-
-            {isLoading && <Spinner />}
-
-            {notice && (
-                <Notice status={notice.status} isDismissible={true}>
-                    {notice.message}
-                </Notice>
-            )}
         </div>
     );
 };
