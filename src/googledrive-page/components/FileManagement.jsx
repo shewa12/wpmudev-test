@@ -8,79 +8,91 @@ import FileUpload from "./FileUpload";
 import { useState } from "react";
 
 const FileManagement = () => {
-    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const { getFiles, createFolder, uploadFile } = useDriveService();
-    const queryClient = useQueryClient();
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const { getFiles, createFolder, uploadFile } = useDriveService();
+  const queryClient = useQueryClient();
 
-    // Fetch files
-    const {
-        isPending,
-        error,
-        data: files,
-    } = useQuery({
-        queryKey: ["getFiles"],
-        queryFn: async () => {
-            const res = await getFiles();
-            return res.files;
-        },
-    });
+  const [pageSize, setPageSize] = useState(20);
+  const [query, setQuery] = useState("trashed=false");
 
-    // Mutation to refresh files
-    const refreshMutation = useMutation({
-        mutationFn: async () => {
-            const res = await getFiles();
-            return res.files;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["getFiles"] });
-        },
-    });
+  const {
+    isPending,
+    error,
+    data: files,
+  } = useQuery({
+    queryKey: ["getFiles", pageSize, query],
+    queryFn: async ({ queryKey }) => {
+      const [_key, pageSize, query] = queryKey;
+      const res = await getFiles({ pageSize, query });
+      return res.files;
+    },
+  });
 
-    const handleUpload = async (file) => {
-        try {
-            setIsUploading(true);
-            const formData = new FormData();
-            formData.set("file", file);
-            await uploadFile(formData);
-            refreshMutation.mutate();
-        } catch (error) {
-            throw new Error(__('Failed to upload file'));
-        } finally {
-            setIsUploading(false);
-        }
-    };
+  const refreshMutation = useMutation({
+    mutationFn: async ({ pageSize, query }) => {
+      const res = await getFiles({ pageSize, query });
+      return res.files;
+    },
+    onSuccess: (data, variables) => {
+      // Update cache directly so UI reflects new results
+      queryClient.setQueryData(
+        ["getFiles", variables.pageSize, variables.query],
+        data
+      );
+    },
+  });
 
-    const handleCreateFolder = async (folderName) => {
-        try {
-            setIsCreatingFolder(true);
-            await createFolder({ name: folderName });
-            refreshMutation.mutate();
-        } catch (error) {
-            throw new Error(__('Failed to create folder'));
-        } finally {
-            setIsCreatingFolder(false);
-        }
+  const handleUpload = async (file) => {
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.set("file", file);
+      await uploadFile(formData);
+      refreshMutation.mutate();
+    } catch (error) {
+      throw new Error(__("Failed to upload file"));
+    } finally {
+      setIsUploading(false);
     }
+  };
 
-    return (
-        <>
-            {/* File Upload Section */}
-            <FileUpload handleUpload={handleUpload} isUploading={isUploading} />
+  const handleCreateFolder = async (folderName) => {
+    try {
+      setIsCreatingFolder(true);
+      await createFolder({ name: folderName });
+      refreshMutation.mutate();
+    } catch (error) {
+      throw new Error(__("Failed to create folder"));
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
 
-            {/* Create Folder Section */}
-            <CreateFolder handleCreateFolder={handleCreateFolder} isCreatingFolder={isCreatingFolder} />
+  return (
+    <>
+      {/* File Upload Section */}
+      <FileUpload handleUpload={handleUpload} isUploading={isUploading} />
 
-            {/* Files List Section */}
-            <FilesList
-                files={files}
-                isLoading={isPending || refreshMutation.isPending}
-                error={error}
-                onRefresh={refreshMutation.mutate}
-            />
-        </>
-    );
+      {/* Create Folder Section */}
+      <CreateFolder
+        handleCreateFolder={handleCreateFolder}
+        isCreatingFolder={isCreatingFolder}
+      />
 
+      {/* Files List Section */}
+      <FilesList
+        files={files}
+        isLoading={isPending || refreshMutation.isPending}
+        error={error}
+        pageSize={pageSize}
+        setPageSize={setPageSize}
+        fileType={query}
+        setFileType={setQuery}
+        onRefresh={() => refreshMutation.mutate({ pageSize, query })}
+      />
+    </>
+  );
 };
 
 export default FileManagement;

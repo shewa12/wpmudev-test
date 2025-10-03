@@ -351,15 +351,22 @@ class Drive_API extends Base {
 	 *
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function list_files() {
+	public function list_files( WP_REST_Request $request ) {
 		if ( ! $this->ensure_valid_token() ) {
 			return new WP_Error( 'no_access_token', 'Not authenticated with Google Drive', array( 'status' => 401 ) );
 		}
 
-		try {
-			$page_size = 20; // This should be an input parameter not static value 20.
-			$query     = 'trashed=false'; // This should be an input parameter not static value.
+		$page_size = (int) $request->get_param( 'pageSize' );
+		$query     = sanitize_text_field( $request->get_param( 'q' ) );
 
+		if ( ! $page_size ) {
+			$page_size = 20;
+		}
+		if ( ! $query ) {
+			$query = 'trashed=false';
+		}
+
+		try {
 			$options = array(
 				'pageSize' => $page_size,
 				'q'        => $query,
