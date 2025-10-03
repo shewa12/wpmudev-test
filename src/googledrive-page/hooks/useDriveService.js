@@ -72,7 +72,6 @@ export default function useDriveService() {
       if (query && typeFilters[query]) {
         type += ` and ${typeFilters[query]}`;
       }
-      console.log(pageSize, type, 'before req')
 
       return request(
         `${

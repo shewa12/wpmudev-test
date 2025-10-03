@@ -49,7 +49,7 @@ const FileManagement = () => {
       const formData = new FormData();
       formData.set("file", file);
       await uploadFile(formData);
-      refreshMutation.mutate();
+      refreshMutation.mutate({pageSize: pageSize, query: query});
     } catch (error) {
       throw new Error(__("Failed to upload file"));
     } finally {
@@ -61,7 +61,7 @@ const FileManagement = () => {
     try {
       setIsCreatingFolder(true);
       await createFolder({ name: folderName });
-      refreshMutation.mutate();
+      refreshMutation.mutate({pageSize: pageSize, query: query});
     } catch (error) {
       throw new Error(__("Failed to create folder"));
     } finally {
