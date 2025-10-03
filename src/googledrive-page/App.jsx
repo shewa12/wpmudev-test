@@ -2,16 +2,12 @@ import {
     useState,
     useEffect,
 } from "@wordpress/element";
-import { Button, TextControl, Spinner, Notice } from "@wordpress/components";
 
 import "./scss/style.scss";
 import CredentialsForm from "./components/CredentialsForm";
 import AuthForm from "./components/AuthForm";
-import FileUpload from "./components/FileUpload";
-import CreateFolder from "./components/CreateFolder";
 import useDriveService from "./hooks/useDriveService";
 import NoticeMessage from "./components/NoticeMessage";
-import FilesList from "./components/FilesList";
 import { __ } from "@wordpress/i18n";
 import FileManagement from "./components/FileManagement";
 
@@ -19,10 +15,6 @@ const WPMUDEV_DriveTest = () => {
     const {
         saveCredentials,
         authenticate,
-        getFiles,
-        uploadFile,
-        downloadFile,
-        createFolder,
     } = useDriveService();
 
     const [isAuthenticated, setIsAuthenticated] = useState(
@@ -34,14 +26,7 @@ const WPMUDEV_DriveTest = () => {
     const [showCredentials, setShowCredentials] = useState(!hasCredentials);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [files, setFiles] = useState([]);
-
-    const [folderName, setFolderName] = useState("");
     const [notice, setNotice] = useState({ message: "", type: "" });
-    const [credentials, setCredentials] = useState({
-        clientId: "",
-        clientSecret: "",
-    });
 
     useEffect(() => { }, [isAuthenticated]);
 
@@ -79,39 +64,6 @@ const WPMUDEV_DriveTest = () => {
             alert(error.message)
         }
     };
-
-    const loadFiles = async () => { };
-
-    const handleUpload = async (file) => {
-        setIsLoading(true);
-        if (!file) {
-            showNotice()
-            return;
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            // call uploadFile (this uses your backend route: restEndpointUpload)
-            const response = await uploadFile(formData);
-            const { success, file } = response
-            if (success) {
-                showNotice(__('File uploaded successfully', 'wpmudev-plugin-test'));
-            } else {
-                showNotice(__('File upload failed'), "error");
-            }
-        } catch (error) {
-            showNotice(__('File upload failed', 'wpmudev-plugin-test'), "error");
-            console.error("Error uploading file:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleDownload = async (fileId, fileName) => { };
-
-    const handleCreateFolder = async () => { };
 
     return (
         <>
