@@ -126,6 +126,7 @@ class Google_Drive extends Base {
 				'wp-i18n',
 				'wp-is-shallow-equal',
 				'wp-polyfill',
+				'wp-components',
 			);
 
 		$this->page_scripts[ $handle ] = array(
